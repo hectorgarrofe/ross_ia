@@ -28,6 +28,22 @@ async function checkHealth() {
 }
 
 // --- Message rendering ---
+function formatText(text) {
+  if (!text) return "";
+  let formatted = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  formatted = formatted.replace(/\n/g, '<br>');
+
+  return formatted;
+}
+
 function addMessage(text, role) {
   welcomeDiv.style.display = "none";
 
@@ -36,7 +52,7 @@ function addMessage(text, role) {
 
   const bubble = document.createElement("div");
   bubble.className = "message-bubble";
-  bubble.textContent = text;
+  bubble.innerHTML = formatText(text);
 
   msg.appendChild(bubble);
   messagesDiv.appendChild(msg);
@@ -121,11 +137,11 @@ async function sendMessage(text) {
           const data = JSON.parse(jsonStr);
           if (data.token) {
             fullResponse += data.token;
-            assistantBubble.textContent = fullResponse;
+            assistantBubble.innerHTML = formatText(fullResponse);
             scrollToBottom();
           }
           if (data.error) {
-            assistantBubble.textContent = `Error: ${data.error}`;
+            assistantBubble.innerHTML = formatText(`Error: ${data.error}`);
           }
         } catch {
           // skip malformed JSON
@@ -134,8 +150,9 @@ async function sendMessage(text) {
     }
 
     if (!fullResponse) {
-      assistantBubble.textContent =
-        "No he podido generar una respuesta. Comprueba que Ollama está funcionando.";
+      assistantBubble.innerHTML = formatText(
+        "No he podido generar una respuesta. Comprueba que Ollama está funcionando."
+      );
     }
   } catch (err) {
     removeTypingIndicator();
