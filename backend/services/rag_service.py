@@ -1,6 +1,6 @@
 from collections.abc import AsyncIterator
 
-from backend.prompts.templates import SYSTEM_PROMPT, RAG_PROMPT_TEMPLATE
+from backend.prompts.templates import SYSTEM_PROMPT, RAG_PROMPT_TEMPLATE, USER_PROMPT_TEMPLATE
 from backend.services.ollama_client import OllamaClient
 from backend.services.vector_store import VectorStore
 
@@ -10,7 +10,9 @@ class RAGService:
         self._ollama = OllamaClient()
         self._vector_store = VectorStore()
 
-    async def query_stream(self, question: str) -> AsyncIterator[str]:
+    async def query_stream(
+        self, question: str, model: str | None = None, think: bool = True,
+    ) -> AsyncIterator[str]:
         """Retrieve context and stream the LLM response."""
         # 1. Retrieve relevant chunks
         hits = await self._vector_store.search(question)
@@ -27,17 +29,18 @@ class RAGService:
             context = "No se encontró información relevante en los documentos."
 
         # 3. Build the prompt
-        prompt = RAG_PROMPT_TEMPLATE.format(
-            system_prompt=SYSTEM_PROMPT,
+        user_prompt = USER_PROMPT_TEMPLATE.format(
             context=context,
             question=question,
         )
 
         # 4. Stream response from LLM
-        async for token in self._ollama.generate_stream(prompt):
-            yield token
+        async for chunk in self._ollama.generate_stream(
+            user_prompt, system=SYSTEM_PROMPT, model=model, think=think,
+        ):
+            yield chunk
 
-    async def query(self, question: str) -> dict:
+    async def query(self, question: str, model: str | None = None) -> dict:
         """Retrieve context and return full response with sources."""
         hits = await self._vector_store.search(question)
 
@@ -54,13 +57,14 @@ class RAGService:
             context = "No se encontró información relevante en los documentos."
             sources = set()
 
-        prompt = RAG_PROMPT_TEMPLATE.format(
-            system_prompt=SYSTEM_PROMPT,
+        user_prompt = USER_PROMPT_TEMPLATE.format(
             context=context,
             question=question,
         )
 
-        response = await self._ollama.generate(prompt)
+        response = await self._ollama.generate(
+            user_prompt, system=SYSTEM_PROMPT, model=model,
+        )
         return {"response": response, "sources": sorted(sources)}
 
     def get_sources(self) -> list[str]:

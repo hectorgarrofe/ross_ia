@@ -14,3 +14,8 @@ Contexto:
 {context}
 
 Pregunta del usuario: {question}"""
+
+USER_PROMPT_TEMPLATE = """Contexto:
+{context}
+
+Pregunta del usuario: {question}"""

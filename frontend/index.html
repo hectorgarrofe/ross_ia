@@ -14,9 +14,24 @@
                 <img src="/assets/ross_ai.svg" alt="RÖS'S AI Logo" class="header-logo">
                 <span class="header-subtitle">Asistente Virtual</span>
             </div>
-            <div class="header-status" id="status-indicator">
-                <span class="status-dot"></span>
-                <span class="status-text">Conectando...</span>
+            <div class="header-controls">
+                <div class="model-dropdown" id="model-dropdown">
+                    <button class="model-dropdown-toggle" id="model-toggle" type="button">
+                        <svg class="model-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2a4 4 0 0 1 4 4v1h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2V6a4 4 0 0 1 4-4z"/>
+                            <circle cx="9" cy="14" r="1.5"/><circle cx="15" cy="14" r="1.5"/>
+                        </svg>
+                        <span class="model-name" id="model-name">Cargando...</span>
+                        <svg class="model-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </button>
+                    <div class="model-dropdown-menu" id="model-menu"></div>
+                </div>
+                <div class="header-status" id="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Conectando...</span>
+                </div>
             </div>
         </header>
 
@@ -64,6 +79,82 @@
                 </button>
             </form>
         </footer>
+    </div>
+
+    <!-- Debug Panel -->
+    <div class="debug-panel collapsed" id="debug-panel">
+        <button class="debug-toggle" id="debug-toggle" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+            </svg>
+            <span>Monitor</span>
+        </button>
+        <div class="debug-body">
+            <div class="debug-header">
+                <span class="debug-title">Monitor de inferencia</span>
+                <div class="debug-state" id="debug-state">
+                    <span class="debug-state-dot"></span>
+                    <span class="debug-state-text">Inactivo</span>
+                </div>
+            </div>
+            <div class="debug-grid">
+                <div class="debug-card">
+                    <div class="debug-card-label">Modelo</div>
+                    <div class="debug-card-value" id="dbg-model">--</div>
+                </div>
+                <div class="debug-card">
+                    <div class="debug-card-label">Tiempo</div>
+                    <div class="debug-card-value" id="dbg-elapsed">0.0s</div>
+                </div>
+                <div class="debug-card">
+                    <div class="debug-card-label">Estado</div>
+                    <div class="debug-card-value" id="dbg-phase">--</div>
+                </div>
+                <div class="debug-card">
+                    <div class="debug-card-label">Velocidad</div>
+                    <div class="debug-card-value" id="dbg-speed">-- t/s</div>
+                </div>
+            </div>
+            <div class="debug-section">
+                <div class="debug-section-title">Tokens</div>
+                <div class="debug-bars">
+                    <div class="debug-bar-row">
+                        <span class="debug-bar-label">Prompt</span>
+                        <div class="debug-bar-track"><div class="debug-bar-fill prompt" id="dbg-bar-prompt"></div></div>
+                        <span class="debug-bar-value" id="dbg-prompt-tokens">--</span>
+                    </div>
+                    <div class="debug-bar-row">
+                        <span class="debug-bar-label">Pensamiento</span>
+                        <div class="debug-bar-track"><div class="debug-bar-fill thinking" id="dbg-bar-thinking"></div></div>
+                        <span class="debug-bar-value" id="dbg-thinking-tokens">0</span>
+                    </div>
+                    <div class="debug-bar-row">
+                        <span class="debug-bar-label">Respuesta</span>
+                        <div class="debug-bar-track"><div class="debug-bar-fill response" id="dbg-bar-response"></div></div>
+                        <span class="debug-bar-value" id="dbg-response-tokens">0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="debug-section">
+                <div class="debug-section-title">Tiempos</div>
+                <div class="debug-times">
+                    <div class="debug-time-row">
+                        <span>Carga modelo</span><span id="dbg-t-load">--</span>
+                    </div>
+                    <div class="debug-time-row">
+                        <span>Eval. prompt</span><span id="dbg-t-prompt">--</span>
+                    </div>
+                    <div class="debug-time-row">
+                        <span>Generación</span><span id="dbg-t-gen">--</span>
+                    </div>
+                    <div class="debug-time-row total">
+                        <span>Total</span><span id="dbg-t-total">--</span>
+                    </div>
+                </div>
+            </div>
+            <div class="debug-log" id="debug-log"></div>
+        </div>
     </div>
 
     <script src="/js/app.js"></script>

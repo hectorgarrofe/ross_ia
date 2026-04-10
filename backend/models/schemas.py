@@ -3,6 +3,8 @@ from pydantic import BaseModel
 
 class ChatRequest(BaseModel):
     message: str
+    model: str | None = None
+    think: bool = True
 
 
 class ChatResponse(BaseModel):

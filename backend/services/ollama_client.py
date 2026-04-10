@@ -23,51 +23,83 @@ class OllamaClient:
         except httpx.ConnectError:
             return False
 
-    async def list_models(self) -> list[str]:
+    async def list_models(self) -> list[dict]:
         async with httpx.AsyncClient() as client:
             resp = await client.get(
                 f"{self.base_url}/api/tags", timeout=10.0
             )
             resp.raise_for_status()
             data = resp.json()
-            return [m["name"] for m in data.get("models", [])]
+            THINKING_FAMILIES = {"qwen3", "qwen35"}
+            return [
+                {
+                    "name": m["name"],
+                    "size": m.get("details", {}).get("parameter_size", ""),
+                    "thinks": m.get("details", {}).get("family", "") in THINKING_FAMILIES,
+                }
+                for m in data.get("models", [])
+            ]
 
     async def generate_stream(
-        self, prompt: str, system: str = "", model: str | None = None
-    ) -> AsyncIterator[str]:
+        self, prompt: str, system: str = "", model: str | None = None,
+        think: bool = True,
+    ) -> AsyncIterator[dict]:
+        """Stream LLM response using Ollama /api/chat.
+
+        Yields dicts: type='thinking' | 'response' | 'stats'.
+        """
         model = model or self.llm_model
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
+
         payload = {
             "model": model,
-            "prompt": prompt,
+            "messages": messages,
             "stream": True,
+            "think": think,
         }
-        if system:
-            payload["system"] = system
 
         async with httpx.AsyncClient() as client:
             async with client.stream(
                 "POST",
-                f"{self.base_url}/api/generate",
+                f"{self.base_url}/api/chat",
                 json=payload,
-                timeout=httpx.Timeout(connect=10.0, read=120.0, write=10.0, pool=10.0),
+                timeout=httpx.Timeout(connect=10.0, read=300.0, write=10.0, pool=10.0),
             ) as response:
                 response.raise_for_status()
                 async for line in response.aiter_lines():
                     if not line:
                         continue
                     data = json.loads(line)
-                    token = data.get("response", "")
+                    msg = data.get("message", {})
+                    thinking = msg.get("thinking", "")
+                    token = msg.get("content", "")
+                    if thinking:
+                        yield {"token": thinking, "type": "thinking"}
                     if token:
-                        yield token
+                        yield {"token": token, "type": "response"}
                     if data.get("done", False):
+                        stats = {}
+                        for key in (
+                            "total_duration", "load_duration",
+                            "prompt_eval_count", "prompt_eval_duration",
+                            "eval_count", "eval_duration",
+                        ):
+                            if key in data:
+                                stats[key] = data[key]
+                        if stats:
+                            yield {"type": "stats", "stats": stats}
                         return
 
     async def generate(
         self, prompt: str, system: str = "", model: str | None = None
     ) -> str:
         tokens = []
-        async for token in self.generate_stream(prompt, system, model):
-            tokens.append(token)
+        async for chunk in self.generate_stream(prompt, system, model):
+            if chunk["type"] == "response":
+                tokens.append(chunk["token"])
         return "".join(tokens)
 
     async def embed(self, text: str, model: str | None = None) -> list[float]:

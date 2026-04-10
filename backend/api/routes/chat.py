@@ -16,8 +16,8 @@ async def chat(request: ChatRequest):
 
     async def event_stream():
         try:
-            async for token in rag.query_stream(request.message):
-                data = json.dumps({"token": token}, ensure_ascii=False)
+            async for chunk in rag.query_stream(request.message, model=request.model, think=request.think):
+                data = json.dumps(chunk, ensure_ascii=False)
                 yield f"data: {data}\n\n"
             yield f"data: {json.dumps({'done': True})}\n\n"
         except Exception as e:
@@ -39,7 +39,7 @@ async def chat(request: ChatRequest):
 async def chat_sync(request: ChatRequest):
     """Non-streaming chat endpoint for testing."""
     rag = RAGService()
-    result = await rag.query(request.message)
+    result = await rag.query(request.message, model=request.model)
     return ChatResponse(
         response=result["response"],
         sources=result["sources"],
